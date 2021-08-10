@@ -347,12 +347,12 @@ func (ctrl *ServiceCtrl) Unplug(ctx context.Context, service, zone, addr string)
 }
 
 // Query query service
-func (ctrl *ServiceCtrl) Query(ctx context.Context, clientIP net.IP, service string) (*ServiceV1, int64, error) {
+func (ctrl *ServiceCtrl) Query(ctx context.Context, clientIP net.IP, service string, proto bool) (*ServiceV1, int64, error) {
 	if err := checkService(service); err != nil {
 		return nil, 0, err
 	}
 	if ctrl.ProtoSwitch {
-		return ctrl._query(ctx, clientIP, service)
+		return ctrl._query(ctx, clientIP, service, proto)
 	}
 	return ctrl._queryBack(ctx, clientIP, service)
 }
@@ -383,9 +383,9 @@ func (ctrl *ServiceCtrl) QueryZones(ctx context.Context, clientIP net.IP, servic
 }
 
 // QueryServiceZone query service zone with service key and zone
-func (ctrl *ServiceCtrl) QueryServiceZone(ctx context.Context, clientIP net.IP, service string, zone string) (*ServiceV1, int64, error) {
+func (ctrl *ServiceCtrl) QueryServiceZone(ctx context.Context, clientIP net.IP, service string, zone string, proto bool) (*ServiceV1, int64, error) {
 	key := ctrl.serviceZoneKey(service, zone)
-	return ctrl._query(ctx, clientIP, key) // key 为 `service/zone`
+	return ctrl._query(ctx, clientIP, key, proto) // key 为 `service/zone`
 }
 
 func (ctrl *ServiceCtrl) _queryBack(ctx context.Context, clientIP net.IP, serviceKey string) (*ServiceV1, int64, error) {
@@ -405,7 +405,7 @@ func (ctrl *ServiceCtrl) _queryBack(ctx context.Context, clientIP net.IP, servic
 	return service, resp.Header.Revision, nil
 }
 
-func (ctrl *ServiceCtrl) _query(ctx context.Context, clientIP net.IP, serviceKey string) (*ServiceV1, int64, error) {
+func (ctrl *ServiceCtrl) _query(ctx context.Context, clientIP net.IP, serviceKey string, proto bool) (*ServiceV1, int64, error) {
 	key := ctrl.serviceEntryPrefix(serviceKey)
 	if !ctrl.ProtoSwitch {
 		return ctrl._queryBack(ctx, clientIP, serviceKey)
@@ -418,7 +418,7 @@ func (ctrl *ServiceCtrl) _query(ctx context.Context, clientIP net.IP, serviceKey
 	if len(resp.Kvs) == 0 {
 		return nil, 0, utils.Errorf(utils.EcodeNotFound, "no such service: %s", serviceKey)
 	}
-	service, err := ctrl.makeService(ctx, clientIP, serviceKey, resp.Kvs)
+	service, err := ctrl.makeService(ctx, clientIP, serviceKey, resp.Kvs, proto)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -426,7 +426,7 @@ func (ctrl *ServiceCtrl) _query(ctx context.Context, clientIP net.IP, serviceKey
 }
 
 // Watch watch service
-func (ctrl *ServiceCtrl) Watch(ctx context.Context, clientIP net.IP, serviceKey string, revision int64) (*ServiceV1, int64, error) {
+func (ctrl *ServiceCtrl) Watch(ctx context.Context, clientIP net.IP, serviceKey string, revision int64, proto bool) (*ServiceV1, int64, error) {
 	if err := checkService(serviceKey); err != nil {
 		return nil, 0, err
 	}
@@ -442,7 +442,7 @@ func (ctrl *ServiceCtrl) Watch(ctx context.Context, clientIP net.IP, serviceKey 
 	}
 
 	_ = <-watchCh
-	return ctrl._query(ctx, clientIP, serviceKey)
+	return ctrl._query(ctx, clientIP, serviceKey, proto)
 }
 
 // ServiceDescEvent desc event

@@ -38,7 +38,7 @@ func (ctrl *ServiceCtrl) makeServiceWithRawZone(serviceKey string, kvs []*mvccpb
 	return zones, nil
 }
 
-func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, serviceKey string, kvs []*mvccpb.KeyValue) (*ServiceV1, error) {
+func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, serviceKey string, kvs []*mvccpb.KeyValue, proto bool) (*ServiceV1, error) {
 	zones := make(map[string]*ServiceZoneV1)
 
 	getOps := make([]clientv3.Op, 0)
@@ -91,33 +91,36 @@ func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, servi
 		}
 	}
 
-	for _, kv := range kvs {
-		matches := rServiceSplit.FindAllStringSubmatch(string(kv.Key), -1)
-		if len(matches) != 1 {
-			continue
+	if proto {
+		for _, kv := range kvs {
+			matches := rServiceSplit.FindAllStringSubmatch(string(kv.Key), -1)
+			if len(matches) != 1 {
+				continue
+			}
+			suffix := matches[0][3]
+			if suffix != serviceDescNodeKey {
+				continue
+			}
+			zone := matches[0][2]
+			service := strings.Split(matches[0][1], "/")[1]
+			serviceDesc, err := ctrl.SearchByServiceZone(service, zone)
+			if err != nil {
+				return nil, err
+			}
+			if serviceDesc == nil {
+				glog.Errorf("find by serviceZone not found %s,%s", service, zone)
+				continue
+			}
+			serviceZone := zones[zone]
+			serviceZone.Description = serviceDesc.Description
+			serviceZone.Md5 = serviceDesc.Md5
+			serviceZone.Proto = serviceDesc.Proto
+			serviceZone.Type = serviceDesc.Type
+			serviceZone.Service = serviceKey
+			serviceZone.Zone = zone
 		}
-		suffix := matches[0][3]
-		if suffix != serviceDescNodeKey {
-			continue
-		}
-		zone := matches[0][2]
-		service := strings.Split(matches[0][1], "/")[1]
-		serviceDesc, err := ctrl.SearchByServiceZone(service, zone)
-		if err != nil {
-			return nil, err
-		}
-		if serviceDesc == nil {
-			glog.Errorf("find by serviceZone not found %s,%s", service, zone)
-			continue
-		}
-		serviceZone := zones[zone]
-		serviceZone.Description = serviceDesc.Description
-		serviceZone.Md5 = serviceDesc.Md5
-		serviceZone.Proto = serviceDesc.Proto
-		serviceZone.Type = serviceDesc.Type
-		serviceZone.Service = serviceKey
-		serviceZone.Zone = zone
 	}
+
 	return &ServiceV1{Service: serviceKey, Zones: zones}, nil
 }
 
