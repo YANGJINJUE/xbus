@@ -53,6 +53,8 @@ func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, servi
 			serviceZone := zones[zone]
 			if serviceZone == nil {
 				serviceZone = &ServiceZoneV1{Endpoints: make([]ServiceEndpoint, 0)}
+				//即使proto=false也返回zone,在这里提前赋值，sk-core需要该信息
+				serviceZone.Zone = zone
 				zones[zone] = serviceZone
 			}
 		}
