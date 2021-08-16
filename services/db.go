@@ -140,6 +140,36 @@ func (ctrl *ServiceCtrl) SearchByServiceZone(service, zone string) (*ServiceDesc
 	return nil, nil
 }
 
+// SearchByService search ServiceDescV1 via db(return map(key:service+zone value:ServiceDescV1))
+func (ctrl *ServiceCtrl) SearchByService(service string) (map[string]*ServiceDescV1, error) {
+	if rows, err := ctrl.db.Query(`select zone, typ, proto, description, proto_md5 from services where 
+					 service = ? and status<>-1`, service); err == nil {
+		defer rows.Close()
+		serviceDescV1Map := make(map[string]*ServiceDescV1)
+		for rows.Next() {
+			var zone, typ, proto, description, md5 string
+			if err := rows.Scan(&zone, &typ, &proto, &description, &md5); err != nil {
+				glog.Errorf("batch query db services(%s %s) fail: %v", service, zone, err)
+				return nil, utils.NewError(utils.EcodeSystemError, "batch query db services fail")
+			}
+
+			serviceDescV1Map[service+zone] = &ServiceDescV1{
+				Service:     service,
+				Zone:        zone,
+				Type:        typ,
+				Proto:       proto,
+				Description: description,
+				Md5:         md5}
+		}
+		return serviceDescV1Map, nil
+
+	} else {
+		glog.Errorf("batch query db services(%s) fail: %v", service, err)
+		return nil, utils.NewError(utils.EcodeSystemError, "batch query db services fail")
+	}
+	return nil, nil
+}
+
 // SearchOnlyBymd5s search ServiceDescV1 via db
 func (ctrl *ServiceCtrl) SearchOnlyBymd5s(md5s []string) ([]ServiceDescV1, error) {
 	results := make([]ServiceDescV1, 0)

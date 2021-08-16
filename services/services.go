@@ -418,7 +418,13 @@ func (ctrl *ServiceCtrl) _query(ctx context.Context, clientIP net.IP, serviceKey
 	if len(resp.Kvs) == 0 {
 		return nil, 0, utils.Errorf(utils.EcodeNotFound, "no such service: %s", serviceKey)
 	}
+	makeStartTime := time.Now()
 	service, err := ctrl.makeService(ctx, clientIP, serviceKey, resp.Kvs, proto)
+	makeCostTime := time.Since(makeStartTime)
+	if makeCostTime.Milliseconds() > 2000 {
+		glog.Warningf("makeService Key: %s Cost: %s", key, makeCostTime)
+	}
+
 	if err != nil {
 		return nil, 0, err
 	}

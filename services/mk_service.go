@@ -6,6 +6,7 @@ import (
 	"net"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -40,7 +41,6 @@ func (ctrl *ServiceCtrl) makeServiceWithRawZone(serviceKey string, kvs []*mvccpb
 
 func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, serviceKey string, kvs []*mvccpb.KeyValue, proto bool) (*ServiceV1, error) {
 	zones := make(map[string]*ServiceZoneV1)
-
 	getOps := make([]clientv3.Op, 0)
 	for _, kv := range kvs {
 		matches := rServiceSplit.FindAllStringSubmatch(string(kv.Key), -1)
@@ -94,6 +94,12 @@ func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, servi
 	}
 
 	if proto {
+		serviceZoneStartTime := time.Now()
+		//是否需要批量查询，如果只有一个zone那么直接根据唯一索引service+zone查询即可(效率更高)
+		needBatchQuery := len(zones) > 1
+		//是否已经初始化批量查询
+		initBatchQueryService := false
+		serviceDescV1Map := make(map[string]*ServiceDescV1)
 		for _, kv := range kvs {
 			matches := rServiceSplit.FindAllStringSubmatch(string(kv.Key), -1)
 			if len(matches) != 1 {
@@ -105,9 +111,24 @@ func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, servi
 			}
 			zone := matches[0][2]
 			service := strings.Split(matches[0][1], "/")[1]
-			serviceDesc, err := ctrl.SearchByServiceZone(service, zone)
-			if err != nil {
-				return nil, err
+			if needBatchQuery && !initBatchQueryService {
+				if serviceDescV1MapTemp, err := ctrl.SearchByService(service); err != nil {
+					return nil, err
+				} else {
+					initBatchQueryService = true
+					serviceDescV1Map = serviceDescV1MapTemp
+				}
+			}
+			serviceDesc := &ServiceDescV1{}
+			if !needBatchQuery {
+				serviceDescTemp, err := ctrl.SearchByServiceZone(service, zone)
+				if err != nil {
+					return nil, err
+				}
+				serviceDesc = serviceDescTemp
+			}
+			if needBatchQuery {
+				serviceDesc = serviceDescV1Map[service+zone]
 			}
 			if serviceDesc == nil {
 				glog.Errorf("find by serviceZone not found %s,%s", service, zone)
@@ -118,8 +139,12 @@ func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, servi
 			serviceZone.Md5 = serviceDesc.Md5
 			serviceZone.Proto = serviceDesc.Proto
 			serviceZone.Type = serviceDesc.Type
-			serviceZone.Service = serviceKey
+			serviceZone.Service = service
 			serviceZone.Zone = zone
+		}
+		serviceZoneCostTime := time.Since(serviceZoneStartTime)
+		if serviceZoneCostTime.Milliseconds() > 1000 {
+			glog.Warningf("serviceZone Key: %s Cost: %s", serviceKey, serviceZoneCostTime)
 		}
 	}
 
