@@ -39,7 +39,7 @@ func (ctrl *ServiceCtrl) makeServiceWithRawZone(serviceKey string, kvs []*mvccpb
 	return zones, nil
 }
 
-func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, serviceKey string, kvs []*mvccpb.KeyValue, proto bool) (*ServiceV1, error) {
+func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, serviceKey string, kvs []*mvccpb.KeyValue, proto bool, endpoints bool) (*ServiceV1, error) {
 	zones := make(map[string]*ServiceZoneV1)
 	getOps := make([]clientv3.Op, 0)
 	for _, kv := range kvs {
@@ -49,7 +49,7 @@ func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, servi
 			continue
 		}
 		zone, suffix := matches[0][2], matches[0][3]
-		if strings.HasPrefix(suffix, serviceDescNodeKey) {
+		if (endpoints && strings.HasPrefix(suffix, serviceKeyNodePrefix)) || (!endpoints && strings.HasPrefix(suffix, serviceDescNodeKey)) {
 			serviceZone := zones[zone]
 			if serviceZone == nil {
 				serviceZone = &ServiceZoneV1{Endpoints: make([]ServiceEndpoint, 0)}
@@ -58,7 +58,10 @@ func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, servi
 				zones[zone] = serviceZone
 			}
 		}
-		getOps = append(getOps, clientv3.OpGet(string(kv.Key)))
+		//批量拼装有endpoints的serviceKey
+		if strings.HasPrefix(suffix, serviceKeyNodePrefix) {
+			getOps = append(getOps, clientv3.OpGet(string(kv.Key)))
+		}
 	}
 
 	if len(getOps) > 0 {
@@ -106,10 +109,12 @@ func (ctrl *ServiceCtrl) makeService(ctx context.Context, clientIP net.IP, servi
 				continue
 			}
 			suffix := matches[0][3]
-			if suffix != serviceDescNodeKey {
+			zone := matches[0][2]
+
+			if suffix != serviceDescNodeKey || zones[zone] == nil {
 				continue
 			}
-			zone := matches[0][2]
+			//zone := matches[0][2]
 			service := strings.Split(matches[0][1], "/")[1]
 			if needBatchQuery && !initBatchQueryService {
 				if serviceDescV1MapTemp, err := ctrl.SearchByService(service); err != nil {

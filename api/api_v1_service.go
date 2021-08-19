@@ -159,7 +159,7 @@ func (server *Server) v1QueryService(c echo.Context) error {
 		return JSONResult(c, serviceQueryRawZoneResultV1{Service: service, Revision: rev})
 	}
 
-	service, rev, err := server.services.Query(context.Background(), server.getRemoteIP(c), c.ParamValues()[0], server.needProto(c))
+	service, rev, err := server.services.Query(context.Background(), server.getRemoteIP(c), c.ParamValues()[0], server.needProto(c), server.onlyEndpoints(c))
 	if err != nil {
 		return JSONError(c, err)
 	}
@@ -173,6 +173,7 @@ func (server *Server) v1QueryServiceZone(c echo.Context) error {
 		c.ParamValues()[0],
 		c.ParamValues()[1],
 		server.needProto(c),
+		server.onlyEndpoints(c),
 	)
 	if err != nil {
 		return JSONError(c, err)
@@ -192,7 +193,7 @@ func (server *Server) v1WatchService(c echo.Context) error {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancelFunc()
 
-	service, rev, err := server.services.Watch(ctx, server.getRemoteIP(c), c.ParamValues()[0], revision, server.needProto(c))
+	service, rev, err := server.services.Watch(ctx, server.getRemoteIP(c), c.ParamValues()[0], revision, server.needProto(c), server.onlyEndpoints(c))
 	if err != nil {
 		return JSONError(c, err)
 	}
@@ -238,4 +239,10 @@ func (server *Server) v1WatchServiceDesc(c echo.Context) error {
 func (server *Server) needProto(c echo.Context) bool {
 	//proto默认是true,只有显示传递proto=false才为false
 	return !(c.QueryParam("proto") == "false")
+}
+
+//是否仅获取只有endpoints的serviceZone
+func (server *Server) onlyEndpoints(c echo.Context) bool {
+	//endpoints默认false,只有显示传递endpoints=true才为true
+	return c.QueryParam("endpoints") == "true"
 }
