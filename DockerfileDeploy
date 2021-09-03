@@ -1,12 +1,12 @@
-FROM golang as builder
+FROM golang
 WORKDIR $GOPATH/src/github.com/infrmods/xbus
-COPY . .
+COPY --chown=app:app . .
 RUN go env -w GOPROXY=https://goproxy.cn
 RUN CGO_ENABLED=0 go build
 RUN cp xbus /xbus
 
 FROM alpine
-COPY --from=builder /xbus /usr/bin/xbus
+COPY --chown=app:app --from=0 /xbus /usr/bin/xbus
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
    && apk update && apk add curl
 RUN adduser -D app
