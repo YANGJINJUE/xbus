@@ -3,14 +3,13 @@ WORKDIR $GOPATH/src/github.com/infrmods/xbus
 COPY . .
 RUN go env -w GOPROXY=https://goproxy.cn
 RUN CGO_ENABLED=0 go build
-RUN cp xbus /xbus
-RUN go version
+RUN cp xbus /xbus.bin
 FROM alpine
-COPY --from=0 /xbus /usr/bin/xbus
+COPY --from=0 /xbus.bin /usr/bin/xbus.bin
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
    && apk update && apk add curl
 RUN adduser -D app
 USER app
 WORKDIR /xbus
 RUN mkdir -p ~/logs
-CMD ["/usr/bin/xbus", "-v=1", "-config", "/xbus/config.yaml", "run"]
+CMD ["/usr/bin/xbus.bin", "-v=1", "-config", "/xbus/config.yaml", "run"]
