@@ -1,12 +1,12 @@
-FROM golang
+FROM reg.qa.91jkys.com/lang/golang:1.16.3
 WORKDIR $GOPATH/src/github.com/infrmods/xbus
-COPY --chown=app:app . .
+COPY . .
 RUN go env -w GOPROXY=https://goproxy.cn
 RUN CGO_ENABLED=0 go build
 RUN cp xbus /xbus
-
+RUN go version
 FROM alpine
-COPY --chown=app:app --from=0 /xbus /usr/bin/xbus
+COPY --from=0 /xbus /usr/bin/xbus
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
    && apk update && apk add curl
 RUN adduser -D app
