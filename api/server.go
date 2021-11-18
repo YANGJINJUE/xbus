@@ -97,6 +97,7 @@ func (server *Server) prepare() {
 	server.e.GET("/api/v1/service-descs", server.v1WatchServiceDesc)
 	server.registerConfigAPIs(server.e.Group("/api/configs"))
 	server.registerAppAPIs(server.e.Group("/api/apps"))
+	server.registerAppOfflinesAPIs(server.e.Group("/api/apps/offlines"))
 	server.registerLeaseAPIs(server.e.Group("/api/leases"))
 	p := prometheus.NewPrometheus("xbus", nil)
 	p.Use(server.e)
@@ -318,4 +319,8 @@ func (server *Server) registerAppAPIs(g *echo.Group) {
 	g.GET("/:name/online", echo.HandlerFunc(server.isAppNodeOnline))
 	g.GET("", echo.HandlerFunc(server.listApp))
 	g.PUT("", echo.HandlerFunc(server.newApp))
+}
+
+func (server *Server) registerAppOfflinesAPIs(g *echo.Group) {
+	g.POST("", echo.HandlerFunc(server.offlineAppServices))
 }

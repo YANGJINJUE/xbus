@@ -418,3 +418,25 @@ func (ctrl *AppCtrl) IsAppNodeOnline(ctx context.Context, name, label, key strin
 	}
 	return len(resp.Kvs) > 0, nil
 }
+
+func (ctrl *AppCtrl) OfflineAppServices(ctx context.Context, appName string, ips string) error {
+	respServices, err := ctrl.etcdClient.Get(ctx, "/services/"+appName+".", clientv3.WithPrefix(), clientv3.WithKeysOnly())
+	if err != nil {
+		return utils.CleanErr(err, "offlineAppServices fail", "offlineAppServices(%s) fail: %v", appName+" "+ips, err)
+	}
+	//暂时只允许单个ip下线
+	deleteOps := make([]clientv3.Op, 0, respServices.Count)
+	for _, kv := range respServices.Kvs {
+		serviceKey := string(kv.Key)
+		if strings.HasSuffix(serviceKey, ips) {
+			deleteOps = append(deleteOps, clientv3.OpDelete(string(kv.Key)))
+		}
+	}
+	if len(deleteOps) <= 0 {
+		return nil
+	}
+	if _, err := ctrl.etcdClient.Txn(ctx).Then(deleteOps...).Commit(); err != nil {
+		return utils.CleanErr(err, "offlineAppServices fail", "offlineAppServices fail: %v", err)
+	}
+	return nil
+}

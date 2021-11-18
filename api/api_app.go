@@ -126,3 +126,13 @@ func (server *Server) isAppNodeOnline(c echo.Context) error {
 	}
 	return JSONResult(c, online)
 }
+
+func (server *Server) offlineAppServices(c echo.Context) error {
+	appName := c.FormValue("app")
+	ips := c.FormValue("ips")
+	if len(ips) == 0 || len(appName) == 0 {
+		return JSONResult(c, "appName or ips empty")
+	}
+	server.apps.OfflineAppServices(context.Background(), appName, ips)
+	return JSONResult(c, "ok")
+}
