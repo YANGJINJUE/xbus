@@ -420,6 +420,11 @@ func (ctrl *AppCtrl) IsAppNodeOnline(ctx context.Context, name, label, key strin
 }
 
 func (ctrl *AppCtrl) OfflineAppServices(ctx context.Context, appName string, ips string) error {
+	//先判断是否存在appName，防止误下线其它相识名称应用
+	if app, err := GetAppByName(ctrl.db, appName); err != nil || app == nil {
+		glog.Errorf("get app(%s) fail: %v", appName, err)
+		return utils.CleanErr(err, "get app fail", "get app fail: %v", err)
+	}
 	respServices, err := ctrl.etcdClient.Get(ctx, "/services/"+appName+".", clientv3.WithPrefix(), clientv3.WithKeysOnly())
 	if err != nil {
 		return utils.CleanErr(err, "offlineAppServices fail", "offlineAppServices(%s) fail: %v", appName+" "+ips, err)
