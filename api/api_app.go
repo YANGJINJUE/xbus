@@ -130,6 +130,7 @@ func (server *Server) isAppNodeOnline(c echo.Context) error {
 func (server *Server) offlineAppServices(c echo.Context) error {
 	appName := c.FormValue("app")
 	ips := c.FormValue("ips")
+	glog.Infof("offline appName: %s ips: %s", appName, ips)
 	if len(ips) == 0 || len(appName) == 0 {
 		return JSONResult(c, "appName or ips empty")
 	}
