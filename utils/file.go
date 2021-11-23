@@ -11,5 +11,6 @@ func WriteFile(path string, perm os.FileMode, data []byte) error {
 		return err
 	}
 	_, err = f.Write(data)
+	defer f.Close()
 	return err
 }
