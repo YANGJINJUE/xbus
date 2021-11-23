@@ -12,6 +12,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/gocomm/dbutil"
@@ -149,7 +150,11 @@ func (ctrl *AppCtrl) NewApp(app *App, key crypto.Signer, dnsNames []string, ips 
 		glog.Errorf("insert app(%s) fail: %v", app.Name, err)
 		return nil, utils.NewSystemError("create app fail")
 	}
+	getStartTime := time.Now()
+	glog.Info("startDumpKeyCert...")
 	ctrl.dumpKeyCert(app, key)
+	getCostTime := time.Since(getStartTime)
+	glog.Infof("DumpKeyCert: %s Cost: %s", app.Name, getCostTime)
 	return key, nil
 }
 
