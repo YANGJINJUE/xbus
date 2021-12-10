@@ -12,7 +12,6 @@ import (
 	"path"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/gocomm/dbutil"
@@ -87,15 +86,16 @@ type AppCtrl struct {
 	db           *sql.DB
 	CertsManager *CertsCtrl
 	etcdClient   *clientv3.Client
+	env          string `default:"qa"`
 }
 
 // NewAppCtrl new app ctrl
-func NewAppCtrl(config *Config, db *sql.DB, etcdClient *clientv3.Client) (*AppCtrl, error) {
+func NewAppCtrl(config *Config, db *sql.DB, etcdClient *clientv3.Client, env string) (*AppCtrl, error) {
 	certs, err := NewCertsCtrl(&config.Cert, &dbSerialGenerator{db})
 	if err != nil {
 		return nil, err
 	}
-	return &AppCtrl{config: config, db: db, CertsManager: certs, etcdClient: etcdClient}, nil
+	return &AppCtrl{config: config, db: db, CertsManager: certs, etcdClient: etcdClient, env: env}, nil
 }
 
 // GetAppCertPool get app certPool
@@ -105,8 +105,22 @@ func (ctrl *AppCtrl) GetAppCertPool() *x509.CertPool {
 
 var rAppName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-_]+$`)
 
+const dnsNameSuffix = "91jkys.com"
+
+//dnsNamePrefix
+func (ctrl *AppCtrl) dnsNamePrefix() string {
+	if ctrl.env == "qa" || ctrl.env == "stress" || ctrl.env == "pre" {
+		return "." + ctrl.env + "."
+	} else {
+		return "."
+	}
+}
+
 // NewApp new app
-func (ctrl *AppCtrl) NewApp(app *App, key crypto.Signer, dnsNames []string, ips []net.IP, days int) (crypto.Signer, error) {
+func (ctrl *AppCtrl) NewApp(app *App, key crypto.Signer, dnsNames []string, ips []net.IP, days int, updateAppCert bool) (crypto.Signer, error) {
+	if dnsNames == nil || len(dnsNames) <= 0 || dnsNames[0] == "" {
+		dnsNames = []string{app.Name + ctrl.dnsNamePrefix() + dnsNameSuffix}
+	}
 	if !rAppName.MatchString(app.Name) {
 		return nil, utils.Errorf(utils.EcodeInvalidName, "invalid app name: %s", app.Name)
 	}
@@ -142,19 +156,28 @@ func (ctrl *AppCtrl) NewApp(app *App, key crypto.Signer, dnsNames []string, ips 
 	}
 	app.PrivateKey = data
 
-	if err := InsertApp(ctrl.db, app); err != nil {
-		if err == dbutil.ZeroEffected {
-			return nil, utils.NewError(utils.EcodeNameDuplicated, "name duplicated")
-		}
+	if !updateAppCert {
+		if err := InsertApp(ctrl.db, app); err != nil {
+			if err == dbutil.ZeroEffected {
+				return nil, utils.NewError(utils.EcodeNameDuplicated, "name duplicated")
+			}
 
-		glog.Errorf("insert app(%s) fail: %v", app.Name, err)
-		return nil, utils.NewSystemError("create app fail")
+			glog.Errorf("insert app(%s) fail: %v", app.Name, err)
+			return nil, utils.NewSystemError("create app fail")
+		}
 	}
-	getStartTime := time.Now()
-	glog.Info("startDumpKeyCert...")
+
+	if updateAppCert {
+		if updateCount, err := UpdateAppCert(ctrl.db, app); err != nil {
+			if updateCount == 0 {
+				return nil, utils.NewError(utils.EcodeNotFound, "name not found")
+			}
+
+			glog.Errorf("update appCert(%s) fail: %v", app.Name, err)
+			return nil, utils.NewSystemError("update appCert fail")
+		}
+	}
 	ctrl.dumpKeyCert(app, key)
-	getCostTime := time.Since(getStartTime)
-	glog.Infof("DumpKeyCert: %s Cost: %s", app.Name, getCostTime)
 	return key, nil
 }
 

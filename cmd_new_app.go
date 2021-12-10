@@ -21,8 +21,9 @@ type NewAppCmd struct {
 	EcdsaCruve  string
 	Days        int
 
-	CertFile string
-	KeyFile  string
+	CertFile      string
+	KeyFile       string
+	UpdateAppCert bool
 }
 
 // Name cmd name
@@ -51,6 +52,8 @@ func (cmd *NewAppCmd) SetFlags(f *flag.FlagSet) {
 
 	f.StringVar(&cmd.CertFile, "cert-out", "", "cert output path, default: {name}cert.pem")
 	f.StringVar(&cmd.KeyFile, "key-out", "", "key output path, default: {name}key.pem")
+	f.BoolVar(&cmd.UpdateAppCert, "update-app-cert", false, "update app cert, default: false")
+
 }
 
 // Execute cmd execute
@@ -90,7 +93,7 @@ func (cmd *NewAppCmd) Execute(_ context.Context, f *flag.FlagSet, v ...interface
 	appCtrl := x.NewAppCtrl(x.NewDB(), x.Config.Etcd.NewEtcdClient())
 	app := apps.App{Status: utils.StatusOk, Name: appName,
 		Description: cmd.Description}
-	if _, err := appCtrl.NewApp(&app, privKey, strings.Split(cmd.DNSNames, ","), ips, cmd.Days); err != nil {
+	if _, err := appCtrl.NewApp(&app, privKey, strings.Split(cmd.DNSNames, ","), ips, cmd.Days, cmd.UpdateAppCert); err != nil {
 		glog.Errorf("create app fail: %v", err)
 		return subcommands.ExitFailure
 	}

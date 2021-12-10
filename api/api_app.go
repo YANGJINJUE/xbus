@@ -76,7 +76,7 @@ func (server *Server) newApp(c echo.Context) error {
 		Status:      utils.StatusOk,
 		Name:        req.Name,
 		Description: req.Description}
-	_, err = server.apps.NewApp(&app, privKey, nil, nil, req.Days)
+	_, err = server.apps.NewApp(&app, privKey, nil, nil, req.Days, false)
 	if err != nil {
 		glog.Errorf("create app fail: %v", err)
 		return JSONError(c, err)

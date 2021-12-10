@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"os"
+	"time"
+
 	"github.com/coreos/etcd/clientv3"
 	"github.com/gocomm/config"
 	"github.com/golang/glog"
@@ -15,8 +18,6 @@ import (
 	"github.com/infrmods/xbus/utils"
 	"github.com/xuri/glc"
 	"gopkg.in/yaml.v2"
-	"os"
-	"time"
 
 	_ "github.com/gocomm/dbutil/dialects/mysql"
 )
@@ -29,8 +30,8 @@ type Config struct {
 	Apps     apps.Config
 	API      api.Config
 	Logs     string
-
-	DB struct {
+	Env      string `default:"qa"`
+	DB       struct {
 		Driver  string `default:"mysql"`
 		Source  string `default:"root:passwd@/xbus?parseTime=true"`
 		MaxConn int    `default:"100"`
@@ -73,7 +74,7 @@ func (x *XBus) NewDB() *sql.DB {
 
 // NewAppCtrl new app ctrl
 func (x *XBus) NewAppCtrl(db *sql.DB, etcdClient *clientv3.Client) *apps.AppCtrl {
-	appCtrl, err := apps.NewAppCtrl(&x.Config.Apps, db, etcdClient)
+	appCtrl, err := apps.NewAppCtrl(&x.Config.Apps, db, etcdClient, x.Config.Env)
 	if err != nil {
 		glog.Errorf("create appsCtrl fail: %v", err)
 		os.Exit(-1)
@@ -90,6 +91,7 @@ func main() {
 	subcommands.Register(&GenRootCmd{}, "")
 	subcommands.Register(&FixCmd{}, "")
 	subcommands.Register(&ConsistencyFixCmd{}, "")
+	subcommands.Register(&UpdateAppCert{}, "")
 	subcommands.Register(&ListGroupCmd{}, "")
 	subcommands.Register(&ListPermCmd{}, "")
 	subcommands.Register(&GrantCmd{}, "")
