@@ -65,7 +65,7 @@ func InsertApp(db *sql.DB, app *App) error {
 
 // UpdateAppCert
 func UpdateAppCert(db *sql.DB, app *App) (int64, error) {
-	return dbutil.Update(db, `update apps set private_key=?, cert=?, modify_time=? where name=?  LIMIT 1`, app.PrivateKey, app.Cert, time.Now(), app.Name)
+	return dbutil.Update(db, `update apps set private_key=?, cert=?, modify_time=now() where name=?  LIMIT 1`, app.PrivateKey, app.Cert, app.Name)
 }
 
 // GetAppList get app list
