@@ -119,8 +119,7 @@ func (ctrl *AppCtrl) dnsNamePrefix() string {
 // NewApp new app
 func (ctrl *AppCtrl) NewApp(app *App, key crypto.Signer, dnsNames []string, ips []net.IP, days int, updateAppCert bool) (crypto.Signer, error) {
 	if dnsNames == nil || len(dnsNames) <= 0 || dnsNames[0] == "" {
-		//dnsNames = []string{app.Name, app.Name + ctrl.dnsNamePrefix() + dnsNameSuffix}
-		dnsNames = []string{app.Name}
+		dnsNames = []string{app.Name, app.Name + ctrl.dnsNamePrefix() + dnsNameSuffix}
 	}
 	if !rAppName.MatchString(app.Name) {
 		return nil, utils.Errorf(utils.EcodeInvalidName, "invalid app name: %s", app.Name)
