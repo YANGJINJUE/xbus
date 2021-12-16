@@ -50,8 +50,7 @@ func (cmd *UpdateAppCert) Execute(_ context.Context, f *flag.FlagSet, v ...inter
 	}
 	for _, app := range appList {
 		if _, err := appCtrl.NewApp(&app, privKey, nil, nil, 3650, true); err != nil {
-			glog.Errorf("create app fail: %v", err)
-			return subcommands.ExitFailure
+			glog.Errorf("update app cert fail: %v", err)
 		}
 		glog.Info("app: " + app.Name + " update success")
 	}
