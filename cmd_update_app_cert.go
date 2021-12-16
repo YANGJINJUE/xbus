@@ -54,7 +54,6 @@ func (cmd *UpdateAppCert) Execute(_ context.Context, f *flag.FlagSet, v ...inter
 			return subcommands.ExitFailure
 		}
 		glog.Info("app: " + app.Name + " update success")
-		break
 	}
 	glog.Info("update-app-cert all success")
 	return subcommands.ExitSuccess
