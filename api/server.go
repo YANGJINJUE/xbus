@@ -86,7 +86,7 @@ func (server *Server) prepare() {
 	server.e.Use(middleware.Recover())
 	if glog.V(1) {
 		server.e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-			Format: "[${time_rfc3339}] ${remote_ip} ${bytes_in} - ${user_agent} ${protocol} ${method} ${uri}: ${status} ${latency_human} ${bytes_out}\n",
+			Format: "[${time_rfc3339}] ${remote_ip} ${bytes_in} - ${user_agent} ${protocol} ${method} ${uri}: ${status} ${latency} ${bytes_out}\n",
 		}))
 	}
 	server.e.GET("/api/ok", func(c echo.Context) error {
