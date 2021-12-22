@@ -2,7 +2,10 @@ package api
 
 import (
 	"context"
+	"fmt"
+	"github.com/golang/glog"
 	"net/http"
+	"runtime"
 	"strconv"
 
 	"github.com/coreos/etcd/clientv3"
@@ -71,9 +74,24 @@ func (server *Server) keepAliveLease(c echo.Context) error {
 	}
 	_, err = server.etcdClient.KeepAliveOnce(context.Background(), leaseID)
 	if err != nil {
+		glog.Info(GetErrorStack("", err))
 		return JSONError(c, utils.CleanErr(err, "keepalive fail", "keepalive(%d) fail: %v", leaseID, err))
 	}
 	return JSONOk(c)
+}
+
+func GetErrorStack(preStr string, err error) string {
+	pc, file, line, ok := runtime.Caller(1)
+	f := runtime.FuncForPC(pc)
+	if !ok {
+		return "GetErrorStack 方法获取堆栈失败，返回错误原信息：" + err.Error()
+	}
+	if err == nil {
+		return ""
+	} else {
+		errMsg := fmt.Sprintf("%s \n\tat %s:%d (Method %s)\nCause by: %s\n", preStr, file, line, f.Name(), err.Error())
+		return errMsg
+	}
 }
 
 func (server *Server) revokeLease(c echo.Context) error {
