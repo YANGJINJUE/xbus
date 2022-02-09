@@ -3,11 +3,13 @@ package api
 import (
 	"context"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/golang/glog"
 	"github.com/infrmods/xbus/apps"
 	"github.com/infrmods/xbus/utils"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type leaseGrantResult struct {
@@ -68,7 +70,12 @@ func (server *Server) keepAliveLease(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	keeppAliveStartTime := time.Now()
 	_, err = server.etcdClient.KeepAliveOnce(context.Background(), leaseID)
+	keepAliveCostTime := time.Since(keeppAliveStartTime)
+	if keepAliveCostTime.Milliseconds() > 1000 {
+		glog.Warningf("keepAliveLease leaseId: %s Cost: %s", leaseID, keepAliveCostTime)
+	}
 	if err != nil {
 		return JSONError(c, utils.CleanErr(err, "keepalive fail", "keepalive(%d) fail: %v", leaseID, err))
 	}
