@@ -7,7 +7,7 @@ RUN cp xbus /xbus.bin
 FROM alpine
 COPY --from=0 /xbus.bin /usr/bin/xbus
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
-   && apk update && apk add curl
+   && apk update && apk add curl bash
 RUN adduser -D app
 USER app
 WORKDIR /xbus
