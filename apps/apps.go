@@ -12,6 +12,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/gocomm/dbutil"
@@ -256,7 +257,12 @@ func (ctrl *AppCtrl) ListApp(skip, limit int) ([]App, error) {
 
 // GetAppGroupByName get app group byname
 func (ctrl *AppCtrl) GetAppGroupByName(name string) (*App, []int64, error) {
+	getAppStartTime := time.Now()
 	app, groupIDs, err := GetAppGroupByName(ctrl.db, name)
+	getAppCostTime := time.Since(getAppStartTime)
+	if getAppCostTime.Milliseconds() > 1000 {
+		glog.Warningf("GetAppGroupByName Key: %s Cost: %s", name, getAppCostTime)
+	}
 	if err != nil {
 		glog.Errorf("get app&group(%s) fail: %v", name, err)
 		return nil, nil, utils.NewSystemError("get app&group fail")
