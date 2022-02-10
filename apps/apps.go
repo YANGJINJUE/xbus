@@ -12,6 +12,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
@@ -255,8 +256,29 @@ func (ctrl *AppCtrl) ListApp(skip, limit int) ([]App, error) {
 	return apps, nil
 }
 
+type AppGroupCache struct {
+	app      App
+	groupIDs []int64
+}
+
+var appGroupCacheMap map[string]*AppGroupCache
+
+func (ctrl *AppCtrl) InitAppGroupListCache() {
+	appGroupCacheMap, _ = GetAppGroup(ctrl.db)
+	glog.Infof("init app group list cache success,app count:%s", len(appGroupCacheMap))
+}
+
+var mutex sync.Mutex
+
 // GetAppGroupByName get app group byname
 func (ctrl *AppCtrl) GetAppGroupByName(name string) (*App, []int64, error) {
+	//获取缓存数据
+	appGroupCache := appGroupCacheMap[name]
+	if appGroupCache != nil {
+		//glog.Infof("get cache success %s", name)
+		return &appGroupCache.app, appGroupCache.groupIDs, nil
+	}
+
 	getAppStartTime := time.Now()
 	app, groupIDs, err := GetAppGroupByName(ctrl.db, name)
 	getAppCostTime := time.Since(getAppStartTime)
@@ -267,7 +289,18 @@ func (ctrl *AppCtrl) GetAppGroupByName(name string) (*App, []int64, error) {
 		glog.Errorf("get app&group(%s) fail: %v", name, err)
 		return nil, nil, utils.NewSystemError("get app&group fail")
 	}
+	//更新缓存
+	ctrl.updateAppGroupCacheMap(app, name, groupIDs)
 	return app, groupIDs, nil
+}
+
+func (ctrl *AppCtrl) updateAppGroupCacheMap(app *App, name string, groupIDs []int64) {
+	if app != nil {
+		mutex.Lock()
+		defer mutex.Unlock()
+		appGroupCacheMap[name] = &AppGroupCache{app: *app, groupIDs: groupIDs}
+		glog.Info("app group cache update success: ", name)
+	}
 }
 
 // NewGroup new group

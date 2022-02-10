@@ -78,6 +78,8 @@ func NewServer(config *Config, etcdClient *clientv3.Client,
 		etcdClient: etcdClient,
 		services:   servs, configs: cfgs, apps: apps, e: echo.New(), ProtoSwitch: true}
 	server.services.ProtoSwitch = server.ProtoSwitch
+	//初始化应用信息缓存，加快后续权限校验速度
+	server.apps.InitAppGroupListCache()
 	server.prepare()
 	return server
 }

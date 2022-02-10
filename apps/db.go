@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/pem"
 	"fmt"
+	"github.com/golang/glog"
 	"strconv"
 	"time"
 
@@ -107,6 +108,37 @@ func GetAppGroupByName(db *sql.DB, name string) (*App, []int64, error) {
 	} else {
 		return nil, nil, err
 	}
+}
+
+// GetAppGroupByName get app group by name
+func GetAppGroup(db *sql.DB) (map[string]*AppGroupCache, error) {
+	appGroupListCacheMap := make(map[string]*AppGroupCache)
+	if rows, err := db.Query(`select apps.id, apps.status, apps.name,
+                               apps.description, apps.cert, apps.create_time, apps.modify_time,
+                               group_concat(groups.id, ",")
+                        from apps
+                        left join group_members on group_members.app_id=apps.id
+                        left join ` + "`groups`" + ` on group_members.group_id=groups.id
+						where apps.status<>-1
+                        group by apps.id,groups.id`); err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var app App
+			var groupIDs dbutil.NumList
+			if err := rows.Scan(&app.ID, &app.Status, &app.Name, &app.Description,
+				&app.Cert, &app.CreateTime, &app.ModifyTime, &groupIDs); err == nil {
+				appGroupListCacheMap[app.Name] = &AppGroupCache{app: app, groupIDs: groupIDs}
+			} else if err == sql.ErrNoRows {
+				return appGroupListCacheMap, nil
+			} else {
+				glog.Errorf("get app group row fail: %v", err)
+				return appGroupListCacheMap, err
+			}
+		}
+	} else {
+		glog.Errorf("get app group list fail: %v", err)
+	}
+	return appGroupListCacheMap, nil
 }
 
 // Group group table
