@@ -245,16 +245,32 @@ func (ctrl *ServiceCtrl) PlugAll(ctx context.Context,
 				[]clientv3.Op{opPut},
 			))
 	}
+	updateServiceStartTime := time.Now()
 	if err := ctrl.updateServiceDBItems(descs); err != nil {
 		glog.Errorf("update service db items fail: %v", err)
 		return 0, utils.NewError(utils.EcodeSystemError, "update db fail")
 	}
+	updateServiceCostTime := time.Since(updateServiceStartTime)
+	if updateServiceCostTime.Milliseconds() >= 1000 {
+		glog.Infof("update service db items,Cost: %s", updateServiceCostTime)
+
+	}
+	updateEtcdStartTime := time.Now()
 	if _, err := ctrl.etcdClient.Txn(ctx).Then(updateOps...).Commit(); err != nil {
 		return 0, utils.CleanErr(err, "plug service fail", "put services node fail: %v", err)
 	}
+	updateEtcdCostTime := time.Since(updateEtcdStartTime)
+	if updateEtcdCostTime.Milliseconds() >= 1000 {
+		glog.Infof("update service etcd,Cost: %s", updateServiceCostTime)
+	}
+	commitServiceStartTime := time.Now()
 	if err := ctrl.updateServiceDBItemsCommit(descs); err != nil {
 		glog.Errorf("update service db items fail: %v", err)
 		return 0, utils.NewError(utils.EcodeSystemError, "update db fail")
+	}
+	commitServiceCostTime := time.Since(commitServiceStartTime)
+	if commitServiceCostTime.Milliseconds() >= 1000 {
+		glog.Infof("commit service db,Cost: %s", updateServiceCostTime)
 	}
 	return leaseID, nil
 }

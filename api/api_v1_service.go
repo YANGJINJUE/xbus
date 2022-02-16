@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/golang/glog"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
@@ -81,6 +82,7 @@ func (server *Server) v1PlugAllService(c echo.Context) error {
 		}
 	}
 	notPermitted := make([]string, 0)
+	checkPermStartTime := time.Now()
 	for _, desc := range descs {
 		if ok, err := server.checkPerm(c, apps.PermTypeService, true, desc.Service); err == nil {
 			if !ok {
@@ -92,6 +94,10 @@ func (server *Server) v1PlugAllService(c echo.Context) error {
 		if desc.Zone == "" {
 			desc.Zone = services.DefaultZone
 		}
+	}
+	checkPermCostTime := time.Since(checkPermStartTime)
+	if checkPermCostTime.Milliseconds() >= 1000 {
+		glog.Infof("check perm,Cost: %s", checkPermCostTime)
 	}
 	if len(notPermitted) > 0 {
 		return server.newNotPermittedResp(c, notPermitted...)
