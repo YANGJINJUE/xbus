@@ -197,7 +197,7 @@ func (server *Server) verifyApp(h echo.HandlerFunc) echo.HandlerFunc {
 
 		c.Set("app", (*apps.App)(nil))
 		c.Set("groupIds", []int64{})
-		if appName != "" {
+		if appName != "" && appName != "unknown" {
 			if app, groupIds, err := server.apps.GetAppGroupByName(appName); err != nil {
 				glog.Errorf("get app(%s) fail: %v", appName, err)
 				return JSONErrorC(c, http.StatusServiceUnavailable,
