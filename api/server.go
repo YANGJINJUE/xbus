@@ -21,6 +21,7 @@ import (
 	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"golang.org/x/net/http2"
 )
 
 // IPNet ipnet
@@ -147,6 +148,9 @@ func (server *Server) start() (err error) {
 		}
 		if !server.e.DisableHTTP2 {
 			s.TLSConfig.NextProtos = append(s.TLSConfig.NextProtos, "h2")
+			http2.ConfigureServer(s, &http2.Server{
+				MaxConcurrentStreams: 4096,
+			})
 		}
 	} else {
 		s = server.e.Server
