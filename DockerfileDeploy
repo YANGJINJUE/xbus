@@ -1,4 +1,4 @@
-FROM reg.qa.91jkys.com/lang/golang:1.16.3
+FROM reg.qa.91jkys.com/lang/golang:1.18
 WORKDIR $GOPATH/src/github.com/infrmods/xbus
 COPY . .
 RUN go env -w GOPROXY=https://goproxy.cn
