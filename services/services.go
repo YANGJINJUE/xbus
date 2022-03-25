@@ -12,10 +12,9 @@ import (
 	"strings"
 	"time"
 
-	v3rpc "go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
-
 	"github.com/golang/glog"
 	"github.com/infrmods/xbus/utils"
+	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
@@ -504,7 +503,7 @@ func (ctrl *ServiceCtrl) WatchServiceDesc(ctx context.Context, zone string, revi
 		}
 		if err := resp.Err(); err != nil {
 			// if revision is compacted, return latest revision
-			if err == v3rpc.ErrCompacted {
+			if err == rpctypes.ErrCompacted {
 				glog.Warningf("services-md5s key with revision [%d] is compacted, call get instead", revision)
 				watchCh = watcher.Watch(ctx, prefix, clientv3.WithPrefix())
 				continue

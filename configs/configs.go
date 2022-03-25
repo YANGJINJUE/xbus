@@ -8,8 +8,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/infrmods/xbus/utils"
 	"go.etcd.io/etcd/api/v3/mvccpb"
+	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	clientv3 "go.etcd.io/etcd/client/v3"
-	v3rpc "go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
 )
 
 // ConfigItem config item
@@ -182,7 +182,7 @@ func (ctrl *ConfigCtrl) Watch(ctx context.Context, appID int64, node, name strin
 	resp := <-watchCh
 	if err := resp.Err(); err != nil {
 		// if revision is compacted, return latest revision
-		if err == v3rpc.ErrCompacted {
+		if err == rpctypes.ErrCompacted {
 			glog.Warningf("key [%s] with revision [%d] is compacted, call get instead", key, revision)
 			return ctrl.Get(ctx, appID, node, name)
 		}
