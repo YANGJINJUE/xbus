@@ -40,7 +40,7 @@ func CleanErrWithCode(err error, sysErrRet, sysErrformat string, args ...interfa
 	case context.Canceled:
 		return code, NewError(EcodeCanceled, "")
 	}
-
+	glog.Infof("ErrorCode: %s", code)
 	glog.Errorf(sysErrformat, args...)
 	return code, NewError(EcodeSystemError, sysErrRet)
 }
