@@ -2,8 +2,6 @@ package utils
 
 import (
 	"context"
-	"strings"
-
 	"github.com/golang/glog"
 	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
 	"google.golang.org/grpc"
@@ -40,11 +38,6 @@ func CleanErrWithCode(err error, sysErrRet, sysErrformat string, args ...interfa
 		return code, NewError(EcodeDeadlineExceeded, "")
 	case context.Canceled:
 		return code, NewError(EcodeCanceled, "")
-	}
-	glog.Infof("ErrorCode: %s", code)
-	glog.Errorf("ErrorInfo: %v", err)
-	if strings.Contains(code.String(), "lease not found") {
-		return code, NewError(EcodeNotFound, "")
 	}
 	glog.Errorf(sysErrformat, args...)
 	return code, NewError(EcodeSystemError, sysErrRet)
