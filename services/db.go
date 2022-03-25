@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/gocomm/dbutil"
 	"github.com/golang/glog"
 	"github.com/infrmods/xbus/utils"
+	"github.com/klauspost/compress/zstd"
 )
 
 const (
@@ -40,15 +42,24 @@ func (ctrl *ServiceCtrl) updateServiceDBItems(services []ServiceDescV1) error {
 	values := make([]interface{}, 0, len(services)*9)
 	for i := range services {
 		service := &services[i]
-		sqlValues = append(sqlValues, "(?,?,?,?,?,?,?,?)")
-		values = append(values, serviceStatusOk, service.Service, service.Zone, service.Type, service.Proto, service.Description, service.Md5, 1)
+		sqlValues = append(sqlValues, "(?,?,?,?,?,?,?,?,?)")
+
+		zstdProto := compressProto(service.Proto)
+		values = append(values, serviceStatusOk, service.Service, service.Zone, service.Type, service.Proto, zstdProto, service.Description, service.Md5, 1)
 	}
-	sql := fmt.Sprintf(`insert into services(status, service, zone, typ, proto, description, proto_md5, md5_status) values %s 
+	sql := fmt.Sprintf(`insert into services(status, service, zone, typ, proto, zstd_proto, description, proto_md5, md5_status) values %s 
 						on duplicate key update status=values(status), typ=values(typ),
-						proto=values(proto), description=values(description), proto_md5=values(proto_md5), md5_status=0 `,
+						proto=values(proto), zstd_proto=values(zstd_proto), description=values(description),
+						proto_md5=values(proto_md5), md5_status=0 `,
 		strings.Join(sqlValues, ","))
 	_, err := ctrl.db.Exec(sql, values...)
 	return err
+}
+
+func compressProto(proto string) string {
+	encoder, _ := zstd.NewWriter(nil)
+	bytes := encoder.EncodeAll([]byte(proto), make([]byte, 0, len(proto)/20))
+	return base64.StdEncoding.EncodeToString(bytes)
 }
 
 func (ctrl *ServiceCtrl) updateServiceDBItemsCommit(services []ServiceDescV1) error {
