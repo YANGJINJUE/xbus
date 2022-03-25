@@ -201,7 +201,7 @@ func (ctrl *ServiceCtrl) PlugAll(ctx context.Context,
 	}
 
 	updateOps := make([]clientv3.Op, 0, len(descs)*2)
-
+	nodeKey := ""
 	for i := range descs {
 		desc := &descs[i]
 		//descData, err := desc.Marshal()
@@ -229,7 +229,7 @@ func (ctrl *ServiceCtrl) PlugAll(ctx context.Context,
 				},
 			))
 
-		nodeKey := ctrl.serviceNodeKey(desc.Service, desc.Zone, endpoint.Address)
+		nodeKey = ctrl.serviceNodeKey(desc.Service, desc.Zone, endpoint.Address)
 		var opPut clientv3.Op
 		if leaseID > 0 {
 			opPut = clientv3.OpPut(nodeKey, endpointValue, clientv3.WithLease(leaseID))
@@ -258,7 +258,7 @@ func (ctrl *ServiceCtrl) PlugAll(ctx context.Context,
 	}
 	updateEtcdStartTime := time.Now()
 	if _, err := ctrl.etcdClient.Txn(ctx).Then(updateOps...).Commit(); err != nil {
-		return 0, utils.CleanErr(err, "plug service fail", "put services node fail: %v", err)
+		return 0, utils.CleanErr(err, "plug service fail", "put services node fail: %v nodeKey: %s", err, nodeKey)
 	}
 	updateEtcdCostTime := time.Since(updateEtcdStartTime)
 	if updateEtcdCostTime.Milliseconds() >= 1000 {
