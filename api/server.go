@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
 	"github.com/golang/glog"
 	"github.com/infrmods/xbus/apps"
 	"github.com/infrmods/xbus/configs"
@@ -21,6 +20,7 @@ import (
 	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"golang.org/x/net/http2"
 )
 

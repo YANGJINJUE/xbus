@@ -15,10 +15,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
 	"github.com/gocomm/dbutil"
 	"github.com/golang/glog"
 	"github.com/infrmods/xbus/utils"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"google.golang.org/grpc/codes"
 )
 

@@ -167,7 +167,6 @@ func (ctrl *ServiceCtrl) SearchByService(service string) (map[string]*ServiceDes
 		glog.Errorf("batch query db services(%s) fail: %v", service, err)
 		return nil, utils.NewError(utils.EcodeSystemError, "batch query db services fail")
 	}
-	return nil, nil
 }
 
 // SearchOnlyBymd5s search ServiceDescV1 via db

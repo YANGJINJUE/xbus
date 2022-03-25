@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
 	"github.com/gocomm/config"
 	"github.com/golang/glog"
 	"github.com/google/subcommands"
@@ -17,6 +16,7 @@ import (
 	"github.com/infrmods/xbus/services"
 	"github.com/infrmods/xbus/utils"
 	"github.com/xuri/glc"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"gopkg.in/yaml.v2"
 
 	_ "github.com/gocomm/dbutil/dialects/mysql"

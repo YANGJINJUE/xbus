@@ -6,16 +6,17 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	v3rpc "github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"io"
 	"net"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
+	v3rpc "go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
+
 	"github.com/golang/glog"
 	"github.com/infrmods/xbus/utils"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 // DefaultZone default service zone

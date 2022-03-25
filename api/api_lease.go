@@ -2,14 +2,15 @@ package api
 
 import (
 	"context"
-	"github.com/coreos/etcd/clientv3"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/golang/glog"
 	"github.com/infrmods/xbus/apps"
 	"github.com/infrmods/xbus/utils"
 	"github.com/labstack/echo/v4"
-	"net/http"
-	"strconv"
-	"time"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 type leaseGrantResult struct {

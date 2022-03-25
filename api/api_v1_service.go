@@ -2,10 +2,11 @@ package api
 
 import (
 	"context"
-	"github.com/golang/glog"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
+	"github.com/golang/glog"
+	clientv3 "go.etcd.io/etcd/client/v3"
+
 	"github.com/infrmods/xbus/apps"
 	"github.com/infrmods/xbus/services"
 	"github.com/infrmods/xbus/utils"

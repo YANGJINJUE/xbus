@@ -3,10 +3,11 @@ package utils
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/coreos/etcd/clientv3"
-	"github.com/golang/glog"
 	"os"
 	"time"
+
+	"github.com/golang/glog"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 // ETCDConfig etcd config

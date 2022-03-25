@@ -7,15 +7,16 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/golang/glog"
-	"github.com/google/subcommands"
-	"github.com/infrmods/xbus/services"
 	"io"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/golang/glog"
+	"github.com/google/subcommands"
+	"github.com/infrmods/xbus/services"
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 var rServiceSplit = regexp.MustCompile(`/(.+)/(.+)/(.+)$`)

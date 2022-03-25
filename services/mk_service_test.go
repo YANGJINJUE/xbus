@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang/glog"
 	"github.com/infrmods/xbus/utils"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 func TestMakeService(t *testing.T) {
