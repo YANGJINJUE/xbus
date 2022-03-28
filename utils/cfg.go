@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/glog"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.uber.org/zap"
 )
 
 // ETCDConfig etcd config
@@ -31,11 +32,14 @@ func (etcd *ETCDConfig) NewEtcdClient() *clientv3.Client {
 		pool.AddCert(cert)
 		tlsConfig = &tls.Config{RootCAs: pool}
 	}
+	logConfig := zap.NewProductionConfig()
+	logConfig.Level = zap.NewAtomicLevelAt(zap.ErrorLevel)
 	etcdConfig := clientv3.Config{
 		Endpoints:         etcd.Endpoints,
 		DialTimeout:       etcd.Timeout,
 		TLS:               tlsConfig,
 		DialKeepAliveTime: time.Second * 10,
+		LogConfig:         &logConfig,
 	}
 	etcdClient, err := clientv3.New(etcdConfig)
 	if err != nil {
